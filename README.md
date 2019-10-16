@@ -21,7 +21,7 @@ $ make defconfig
 $ make menuconfig
 ```
 
-Note that this is a low level driver. It provides only `init`, `putpixel`, `blit`, `ioctl` and `close` functions. It is meant to be used as a building block for a graphics library such as [copepod](https://github.com/tuupola/copepod). For basic usage see also [MIPI driver speedtest](https://github.com/tuupola/esp-examples/tree/master/016-mipi-speedtest).
+Note that this is a low level driver. It provides only `init`, `write`, `ioctl` and `close` functions. It is meant to be used as a building block for a graphics library such as [copepod](https://github.com/tuupola/copepod). For basic usage see also [MIPI driver speedtest](https://github.com/tuupola/esp-examples/tree/master/016-mipi-speedtest).
 
 ```c
 #include <driver/spi_master.h>
@@ -37,7 +37,7 @@ uint16_t color = rand() % 0xffff;
 int16_t x0 = rand() % DISPLAY_WIDTH;
 int16_t y0 = rand() % DISPLAY_HEIGHT;
 
-mipi_display_put_pixel(spi, x0, y0, color);
+mipi_display_write(spi, x0, y0, 1, 1, (uint8_t *) &color);
 
 /* Draw a random 32x32 rectangle on the screen. */
 uint16_t w = rand() % 32;
@@ -48,7 +48,7 @@ int16_t y1 = rand() % (DISPLAY_HEIGHT - 32);
 uint8_t bitmap[32 * 32 * sizeof(uint16_t)];
 memset16(bitmap, color, 32 * 32 * sizeof(uint16_t));
 
-mipi_display_blit(spi, x1, y1, w, h, bitmap)
+mipi_display_write(spi, x1, y1, w, h, bitmap)
 ```
 
 You can also issue any command defined in [mipi_dcs.h](mipi_dcs.h).
