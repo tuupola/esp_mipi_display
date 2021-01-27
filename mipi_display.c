@@ -271,6 +271,46 @@ void mipi_display_write(spi_device_handle_t spi, uint16_t x1, uint16_t y1, uint1
     xSemaphoreGive(mutex);
 }
 
+void mipi_display_push(spi_device_handle_t spi, uint8_t *buffer, size_t size)
+{
+    if (0 == size) {
+        return;
+    }
+
+    spi_transaction_t command;
+    spi_transaction_t data;
+
+    xSemaphoreTake(mutex, portMAX_DELAY);
+
+    memset(&command, 0, sizeof(spi_transaction_t));
+    command.length = 8;
+    command.user = (void *) 0;
+    command.flags = SPI_TRANS_USE_TXDATA;
+
+    memset(&data, 0, sizeof(spi_transaction_t));
+    data.length = 8 * 4;
+    data.user = (void *) 1;
+    data.flags = SPI_TRANS_USE_TXDATA;
+
+    command.tx_data[0] = MIPI_DCS_WRITE_MEMORY_CONTINUE;
+    ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &command));
+
+    data.rxlength = 0;
+    data.tx_buffer = buffer;
+    /* Transfer size in bits */
+    data.length = size * DISPLAY_DEPTH;
+    /* Clear SPI_TRANS_USE_TXDATA flag */
+    data.flags = 0;
+
+    if (data.length > SPI_MAX_TRANSFER_SIZE / 2) {
+        ESP_ERROR_CHECK(spi_device_transmit(spi, &data));
+    } else {
+        ESP_ERROR_CHECK(spi_device_polling_transmit(spi, &data));
+    }
+
+    xSemaphoreGive(mutex);
+}
+
 void mipi_display_ioctl(spi_device_handle_t spi, const uint8_t command, uint8_t *data, size_t size)
 {
     xSemaphoreTake(mutex, portMAX_DELAY);
